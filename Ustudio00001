@@ -1,0 +1,217 @@
+# Full System Automation YAML for Ubuntu Studio Installation
+
+# Meta Information
+version: "1.0"
+name: "MayCan Services Ubuntu Studio Auto-Setup"
+description: >
+  Complete automated installation and configuration for Ubuntu Studio,
+  tailored for the Shape System infrastructure. This YAML configures users,
+  software packages, networking, disk partitioning, security settings,
+  environment optimizations, and everything needed for successful deployment.
+
+system:
+  hostname: "shap3s"  # Customize per system, e.g., "sh4pes", "shape0"
+  timezone: "America/Vancouver"
+  locales: "en_US.UTF-8"
+  keyboard_layout: "us"
+  users:
+    - name: "canten"
+      full_name: "Canten Jonathan J. Mayan"
+      sudo: "ALL=(ALL) NOPASSWD:ALL"
+      shell: "/bin/bash"
+      ssh_authorized_keys:
+        - "ssh-rsa AAA...your-ssh-key...=="  # Replace with your public SSH key
+      password: "$6$rounds=4096$example-hash-for-password"  # Use a securely hashed password
+    - name: "jessica"
+      full_name: "Jessica"
+      sudo: "ALL=(ALL) NOPASSWD:ALL"
+      shell: "/bin/bash"
+      password: "$6$rounds=4096$another-secure-hash"
+
+network:
+  version: 2
+  ethernets:
+    eno1:
+      dhcp4: true
+  wifi:
+    access_points:
+      "phonixmobile":
+        password: "wisdom1996"
+
+storage:
+  layout:
+    name: "guided"
+    disk: "/dev/sda"  # Adjust according to the target disk
+    partitions:
+      - mountpoint: "/"
+        size: "50G"
+      - mountpoint: "/home"
+        size: "remaining"
+      - mountpoint: "swap"
+        size: "4G"
+
+bootloader:
+  timeout: 3
+  default: "Ubuntu Studio"
+
+packages:
+  apt_update: true
+  apt_upgrade: true
+  base_packages:
+    - ubuntu-studio-desktop
+    - build-essential
+    - python3
+    - python3-pip
+    - git
+    - net-tools
+    - openssh-server
+    - vim
+    - htop
+    - curl
+    - wget
+  development_tools:
+    - code  # Visual Studio Code
+    - vim
+    - docker
+    - docker-compose
+    - ansible
+  creative_tools:
+    - lmms
+    - ardour
+    - blender
+    - gimp
+    - inkscape
+    - audacity
+    - obs-studio
+    - kdenlive
+    - jackd2
+    - qjackctl
+    - kxstudio-repos
+    - linux-lowlatency
+  additional_repos:
+    - name: "Pro Audio PPA"
+      repo: "ppa:ubuntustudio-ppa/backports"
+  snaps:
+    - name: "chromium"
+    - name: "vlc"
+    - name: "notion-snap"
+    - name: "telegram-desktop"
+
+environment_customization:
+  themes:
+    - theme: "Adapta"
+    - icon_pack: "Papirus"
+  settings:
+    - compositor: "Compton"  # Light compositor for smoother performance
+    - editor: "vim"
+    - terminal: "gnome-terminal"
+    - shell: "bash"
+  custom_scripts:
+    post_install:
+      - "sudo apt update && sudo apt full-upgrade -y"
+      - "snap install --classic code"
+      - "systemctl enable ssh"
+      - "ufw allow ssh"
+      - "ufw enable"
+      - "sudo adduser --quiet --disabled-password --gecos 'Jessica' jessica && echo 'jessica:Gold6042$' | sudo chpasswd"
+      - "sudo usermod -aG sudo jessica"
+      - "mkdir -p /home/canten/projects /home/jessica/projects"
+      - "sudo chown -R canten:canten /home/canten/projects"
+      - "sudo chown -R jessica:jessica /home/jessica/projects"
+      - "sudo apt autoremove -y"
+
+automated_services:
+  enable_services:
+    - ssh
+    - ufw
+    - docker
+  additional_security:
+    firewall_rules:
+      - "allow ssh"
+      - "allow http"
+      - "allow https"
+  backups:
+    schedule:
+      daily:
+        path: "/home/backup"
+        retention: "7 days"
+        exclude:
+          - "/dev"
+          - "/proc"
+          - "/sys"
+          - "/tmp"
+          - "/run"
+          - "/mnt"
+          - "/media"
+          - "/lost+found"
+    ssh_keys_backup: "Generate keys for canten, jessica and root user as needed"
+
+monitoring_and_performance:
+  tools:
+    - htop
+    - iotop
+    - glances
+    - vnstat
+    - nload
+  performance_tweaks:
+    kernel_parameters:
+      - "swappiness=10"
+      - "vm.vfs_cache_pressure=50"
+    jackd:
+      settings:
+        realtime: true
+        buffer_size: "128"
+        sample_rate: "48000"
+  system_health:
+    cron_jobs:
+      - "0 2 * * * apt update && apt upgrade -y && apt autoremove -y"
+      - "0 3 * * * snap refresh"
+      - "0 4 * * * docker system prune -af"
+  additional_monitoring:
+    enable_logging:
+      services:
+        - docker
+        - ssh
+        - network
+    log_rotation:
+      frequency: "weekly"
+      retention: "4 weeks"
+
+integration_with_shape_system:
+  phonix_system:
+    domain: "phonix"
+    hotspot: 
+      ssid: "phonixmobile"
+      password: "wisdom1996"
+    ssh_configuration:
+      allow_password_authentication: false
+      use_keys_for_authentication: true
+    networking:
+      static_or_dhcp: "Optimized Setting Group"
+    file_sharing:
+      enable_nfs: true
+      enable_samba: true
+    server_setup:
+      role: "Primary Proxmox Interface and Ubuntu Studio Workhorse"
+      backup_server: "shape0"
+  node_hierarchy:
+    nodes:
+      - "Circle0"
+      - "L1nes"
+      - "line2"
+      - "shap3s"
+      - "sh4pes"
+      - "square6"
+      - "triangle7"
+      - "LettersA"
+      - "LettersB"
+      - "LettersC"
+      - "numbers1"
+      - "numbers2"
+      - "numbers3"
+
+# Final Steps
+finish:
+  commands:
+    - "reboot"
+    - "echo 'Setup Complete. System Rebooting.'"
