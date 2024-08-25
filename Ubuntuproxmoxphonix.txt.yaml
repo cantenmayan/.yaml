@@ -1,0 +1,67 @@
+﻿#cloud-config
+package_update: true
+package_upgrade: true
+
+
+write_files:
+  - path: /usr/local/bin/initial_setup.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+
+
+      # Set environment variables
+      export DEBIAN_FRONTEND=noninteractive
+
+
+      # Update and upgrade the system
+      echo "Updating and upgrading the system..."
+      sudo apt-get update && sudo apt-get upgrade -y
+
+
+      # Install necessary system packages
+      echo "Installing necessary packages..."
+      sudo apt-get install -y python3 python3-pip python3-venv build-essential git htop curl jq openssh-server ffmpeg glances zram-tools preload sshpass software-properties-common
+
+
+      # Install Python libraries and tools
+      echo "Installing Python libraries..."
+      pip3 install --upgrade pip
+      pip3 install transformers datasets huggingface_hub accelerate ftfy spacy tensorflow keras torch torchvision openai tiktoken scikit-learn pandas numpy matplotlib seaborn jupyter-notebook jupyterlab h2o llm-cli Pillow scipy ipykernel ipython
+
+
+      # Optional: Install CUDA if using NVIDIA GPUs
+      echo "Installing NVIDIA CUDA toolkit..."
+      sudo apt-get install -y nvidia-cuda-toolkit
+
+
+      # Install additional tools
+      echo "Installing additional tools (Ollama, H2O, etc.)..."
+      curl -fsSL https://ollama.com/install.sh | bash
+      curl -fsSL https://get.h2o.ai | bash
+
+
+      # Set up Python virtual environment for LLMs
+      python3 -m venv ~/ai_env
+      source ~/ai_env/bin/activate
+      pip install --upgrade pip
+      pip install transformers accelerate huggingface_hub ollama h2o ai
+
+
+      # Set up Jupyter Notebook with secure access
+      echo "Configuring Jupyter Notebook..."
+      jupyter notebook --generate-config
+      echo "c.NotebookApp.ip = '0.0.0.0'" >> ~/.jupyter/jupyter_notebook_config.py
+      echo "c.NotebookApp.open_browser = False" >> ~/.jupyter/jupyter_notebook_config.py
+      echo "c.NotebookApp.password = 'sha1:<YOUR_SECURE_PASSWORD_HASH>'" >> ~/.jupyter/jupyter_notebook_config.py
+
+
+      # Start Jupyter Lab in the background
+      nohup jupyter lab --allow-root &
+
+
+      echo "Initial setup complete!"
+
+
+runcmd:
+  - /usr/local/bin/initial_setup.sh
