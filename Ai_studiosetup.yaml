@@ -1,0 +1,100 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+write_files:
+  - path: /usr/local/bin/setup_ubuntu_studio.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+
+      # Set environment variables
+      export DEBIAN_FRONTEND=noninteractive
+
+      echo "Starting the setup for Ubuntu Studio AI/ML environment..."
+
+      # Update and upgrade the system
+      echo "Updating and upgrading the system..."
+      sudo apt-get update && sudo apt-get upgrade -y
+
+      # Install necessary system packages
+      echo "Installing necessary packages..."
+      sudo apt-get install -y python3 python3-pip python3-venv build-essential git htop curl jq openssh-server ffmpeg glances zram-tools preload sshpass software-properties-common snapd cmake libsm6 libxext6 libxrender-dev
+
+      # Install Python libraries and AI/ML tools
+      echo "Installing Python libraries..."
+      pip3 install --upgrade pip
+      pip3 install transformers datasets huggingface_hub accelerate ftfy spacy tensorflow keras torch torchvision openai tiktoken scikit-learn pandas numpy matplotlib seaborn jupyter-notebook jupyterlab h2o llm-cli pygpt Pillow scipy ipykernel ipython opencv-python-headless pytesseract
+
+      # Install snap packages for additional tools
+      echo "Installing Snap packages..."
+      sudo snap install gh  # GitHub CLI
+      sudo snap install google-cloud-cli --classic  # Google Cloud CLI
+
+      # Optional: Install CUDA and cuDNN for GPU acceleration
+      echo "Installing NVIDIA CUDA and cuDNN..."
+      sudo apt-get install -y nvidia-cuda-toolkit
+      wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-repo-ubuntu2004_11.4.2-1_amd64.deb
+      sudo dpkg -i cuda-repo-ubuntu2004_11.4.2-1_amd64.deb
+      sudo apt-get update
+      sudo apt-get install -y cuda
+      sudo apt-get install -y libcudnn8 libcudnn8-dev
+
+      # Install additional AI tools (Ollama, H2O, LMS, etc.)
+      echo "Installing Ollama, H2O, and LMS..."
+      curl -fsSL https://ollama.com/install.sh | bash
+      curl -fsSL https://get.h2o.ai | bash
+      curl -fsSL https://localmodelserving.com/install.sh | bash
+
+      # Install Google Cloud SDK
+      echo "Installing Google Cloud SDK..."
+      curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-404.0.0-linux-x86_64.tar.gz
+      tar -xvf google-cloud-sdk-404.0.0-linux-x86_64.tar.gz
+      ./google-cloud-sdk/install.sh
+      ./google-cloud-sdk/bin/gcloud init
+
+      # Set up Python virtual environment for LLMs and AI tools
+      echo "Setting up Python virtual environment..."
+      python3 -m venv ~/ai_env
+      source ~/ai_env/bin/activate
+      pip install --upgrade pip
+      pip install transformers accelerate huggingface_hub ollama h2o ai pygpt opencv-python-headless pytesseract
+
+      # Configure OpenAI API support
+      echo "Setting up OpenAI API integration..."
+      pip install openai
+      echo "export OPENAI_API_KEY='your-openai-api-key-here'" >> ~/.bashrc
+      source ~/.bashrc
+
+      # Set up Jupyter Notebook with secure access
+      echo "Configuring Jupyter Notebook..."
+      jupyter notebook --generate-config
+      echo "c.NotebookApp.ip = '0.0.0.0'" >> ~/.jupyter/jupyter_notebook_config.py
+      echo "c.NotebookApp.open_browser = False" >> ~/.jupyter/jupyter_notebook_config.py
+      echo "c.NotebookApp.password = 'sha1:<YOUR_SECURE_PASSWORD_HASH>'" >> ~/.jupyter/jupyter_notebook_config.py
+
+      # Start Jupyter Lab in the background
+      nohup jupyter lab --allow-root &
+
+      # Docker installation and setup (optional, for containerized AI workflows)
+      echo "Installing Docker for containerized workflows..."
+      sudo apt-get install -y docker.io
+      sudo systemctl start docker
+      sudo systemctl enable docker
+      sudo usermod -aG docker $USER
+      sudo systemctl restart docker
+
+      # Kubernetes installation (optional, for scalable deployments)
+      echo "Installing Kubernetes tools (kubectl, minikube)..."
+      curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+      chmod +x ./kubectl
+      sudo mv ./kubectl /usr/local/bin/kubectl
+      curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+      chmod +x minikube-linux-amd64
+      sudo mv minikube-linux-amd64 /usr/local/bin/minikube
+
+      echo "Setup complete! Rebooting the system to apply all changes."
+      sudo reboot
+
+runcmd:
+  - /usr/local/bin/setup_ubuntu_studio.sh
